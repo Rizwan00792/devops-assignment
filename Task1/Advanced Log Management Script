@@ -1,1 +1,37 @@
 #!/bin/bash
+echo "Finding for all .log extention files that either \"larger than 100MB\" or \"Not modified in last 7 days\" "
+## create one read variable here
+
+backup_dir="/backup"
+archive_dir="/opt/archive/$(date +%Y)/$(date +%m)/$(date +%d)"
+manifest_file="$archive_dir/log_manifest.csv"
+
+mkdir -p "$backup_dir"
+
+cd /backup
+
+find /var/log -type f -name "*.log" \( -size +100M -o -mtime -7 \) -exec cp  {} "$backup_dir" \;
+
+echo "Logs files are backup"
+
+find "$backup_dir" -type f -name "*.log"   -exec gzip -f  {} \;
+
+mkdir -p "$archive_dir"
+
+#mv -f  "$backup_dir"/*.gz "$archive_dir"
+
+echo "creating manifest file with following details \"File path, size (MB), compression date, SHA256 checksum\" "
+
+touch "$manifest_file"
+
+for gzip_files in "$backup_dir"/*.gz;
+do  dest_file="$archive_dir/$(basename "$gzip_files")"
+
+   mv -f "$gzip_files" "$dest_file"
+
+    file_size_mb=$(du -m "$dest_file" | cut -f1)
+    comp_date=$(date +%F)
+    checksum=$(sha256sum "$dest_file" | awk '{print $1}')
+
+    echo "$gzip_files, $file_size_mb MB, $comp_date, $checksum" >> "$manifest_file"
+done
