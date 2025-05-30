@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# Enable logging
+log_file="/var/log/log_archive.log"
+exec > >(tee -a "$log_file") 2>&1
+echo "========== Script started on $(date) =========="
+
 echo "Finding for all .log extention files that either \"larger than 100MB\" or \"Not modified in last 7 days\" "
 ## create one read variable here
 
